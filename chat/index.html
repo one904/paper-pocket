@@ -158,6 +158,8 @@
   <label>接口地址（留空用上面那个）</label><input id="imgBase" placeholder="留空就跟着门走">
   <label>钥匙（留空同上）</label><input id="imgKey" type="password" placeholder="留空同上">
   <label>模型</label><input id="imgModel" placeholder="gpt-image-1 / doubao-seedream">
+  <div class="hint">想让它聊着聊着自己画，就把下面那个「自动画」打开。开了以后，它想画时会写 <b>[画: 内容]</b>，自动变成一张图。</div>
+  <button class="mini" id="autoDrawBtn" style="margin-top:10px">自动画：开</button>
 
   <div class="grp">语音 · 念给你听</div>
   <label>接口地址（留空用手机自带声音）</label><input id="ttsBase" placeholder="留空 = 手机自带">
@@ -179,7 +181,9 @@
 </div>
 
 <div class="picker" id="picker">
-  <div class="head"><h3>小像</h3><button class="mini" id="closePick">收起</button></div>
+  <div class="head"><h3>小像</h3>
+    <div><button class="mini" id="addUrl">贴链接</button>
+    <button class="mini" id="closePick">收起</button></div></div>
   <div class="grid" id="stickGrid"></div>
 </div>
 
@@ -192,6 +196,8 @@ const $=id=>document.getElementById(id);
 const logEl=$('log'), inputEl=$('input'), sendEl=$('send');
 let msgs=JSON.parse(localStorage.getItem(LS_MSG)||'[]');
 let cfg=JSON.parse(localStorage.getItem(LS_CFG)||'{}');
+let urlStickers=JSON.parse(localStorage.getItem('bys-stick-url')||'[]');
+if(cfg.autoDraw===undefined) cfg.autoDraw=true;
 let busy=false;
 
 /* ---------- 图片仓 ---------- */
@@ -247,8 +253,10 @@ function makeNode(m,i){
 }
 async function fillBody(m,node){
   const b=node.querySelector('.body');
-  if(m.type==='image'){const u=await imgURL(m.img);
-    b.innerHTML=u?`<img class="pic" src="${u}">`:esc('[图片找不到了]');}
+  if(m.type==='image'){
+    const u=m.url||await imgURL(m.img);
+    b.innerHTML=u?`<img class="pic" src="${esc(u)}">`:esc('[图片找不到了]');
+  }
   else b.textContent=m.content||'';
 }
 async function render(){
@@ -319,6 +327,9 @@ async function send(){
   bodyEl.innerHTML='<span class="caret"></span>';
   let acc='',rea='',thinkEl=null,ttext=null;
 
+  const sysText=(cfg.sys||'你叫小D，安静、温和，说话短。')
+    + (cfg.autoDraw?'\n\n如果此刻你想画一张图，就另起一行写 [画: 画面描述]，只写画面本身，不要解释这个标记。':'');
+
   const history=msgs.filter(m=>m.type!=='image'&&(m.role==='user'||m.role==='assistant'))
                     .slice(0,-1).map(m=>({role:m.role,content:m.content}));
 
@@ -330,7 +341,7 @@ async function send(){
           method:'POST',
           headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.key},
           body:JSON.stringify({model:cfg.model,stream:true,
-            messages:[{role:'system',content:cfg.sys||'你叫小D，安静、温和，说话短。'},...history]})
+            messages:[{role:'system',content:sysText},...history]})
         });
         if(!r.ok){const t=await r.text();throw new Error('HTTP '+r.status+' '+t.slice(0,140));}
         res=r;break;
@@ -365,11 +376,16 @@ async function send(){
         }catch(e){}
       }
     }
+    let wantDraw=null;
+    const mm=acc.match(/[\[【]\s*画\s*[:：]\s*([^\]】\n]+)\s*[\]】]/);
+    if(mm){wantDraw=mm[1].trim();acc=acc.replace(mm[0],'').trim();}
+
     bodyEl.textContent=acc;
     const last=msgs[msgs.length-1];
     last.content=acc; if(rea) last.reasoning=rea;
     save();
     if(thinkEl){thinkEl.open=false;thinkEl.querySelector('summary').textContent='想过这些';}
+    if(wantDraw&&cfg.autoDraw) await drawImg(wantDraw,true);
   }catch(e){
     bodyEl.innerHTML='<span style="color:#b3543f">没成：'+esc(human(e))+'</span>';
     msgs.pop();save();
@@ -377,13 +393,13 @@ async function send(){
 }
 
 /* ---------- 画 ---------- */
-async function draw(){
-  const p=prompt('画什么？');if(!p)return;
+async function drawImg(p,fromAI){
+  if(!p)return;
   const rawBase=cfg.imgBase||cfg.base||'';
   const key=cfg.imgKey||cfg.key;
   if(!rawBase||!key){pushMsg('sys','生图还没接上门。');return;}
   const model=cfg.imgModel||cfg.model;
-  pushMsg('user','画一张：'+p);
+  if(!fromAI) pushMsg('user','画一张：'+p);
   const {body:be}=pushMsg('assistant','');be.textContent='在画……';
   try{
     let ok=null,lastErr=null;
@@ -408,6 +424,10 @@ async function draw(){
     const k='g:'+Date.now();await putImg(k,blob);
     msgs.pop();pushMsg('assistant','',{type:'image',img:k});
   }catch(e){be.innerHTML='<span style="color:#b3543f">画没成：'+esc(human(e))+'</span>';msgs.pop();save();}
+}
+function draw(){
+  const p=prompt('画什么？');
+  if(p) drawImg(p,false);
 }
 
 /* ---------- 听 ---------- */
@@ -465,9 +485,6 @@ function voice(){
 /* ---------- 小像 ---------- */
 async function openStickers(){
   const g=$('stickGrid');g.innerHTML='';
-  const add=document.createElement('div');add.className='add';add.textContent='+';
-  add.onclick=()=>{$('fileIn').onchange=onStickerFile;$('fileIn').click();};
-  g.appendChild(add);
   for(const k of await allStickers()){
     const u=await imgURL(k);if(!u)continue;
     const im=document.createElement('img');im.src=u;
@@ -477,8 +494,27 @@ async function openStickers(){
       $('picker').classList.remove('open');};
     g.appendChild(im);
   }
+  for(const u of urlStickers){
+    const im=document.createElement('img');im.src=u;im.referrerPolicy='no-referrer';
+    im.onerror=()=>{im.style.opacity=.3;im.title='这个链接打不开';};
+    im.onclick=()=>{pushMsg('assistant','',{type:'image',url:u});
+      $('picker').classList.remove('open');};
+    g.appendChild(im);
+  }
+  const add=document.createElement('div');add.className='add';add.textContent='+';
+  add.onclick=()=>{$('fileIn').onchange=onStickerFile;$('fileIn').click();};
+  g.appendChild(add);
   $('picker').classList.add('open');
 }
+$('addUrl').onclick=()=>{
+  const u=prompt('图床链接（http 开头）');
+  if(!u)return;
+  const t=u.trim();
+  if(!/^https?:\/\//i.test(t)){alert('得是 http 或 https 开头');return;}
+  urlStickers.push(t);
+  localStorage.setItem('bys-stick-url',JSON.stringify(urlStickers));
+  openStickers();
+};
 async function onStickerFile(e){
   const f=e.target.files?.[0];if(!f)return;
   await putImg('s:'+Date.now(),f);e.target.value='';openStickers();
@@ -486,7 +522,13 @@ async function onStickerFile(e){
 
 /* ---------- 居所 ---------- */
 const F=['base','key','model','sys','imgBase','imgKey','imgModel','ttsBase','ttsKey','ttsModel','ttsVoice'];
-function fillCfg(){F.forEach(k=>{const el=$(k);if(el)el.value=cfg[k]||'';});$('css').value=cfg.css||'';$('mods').innerHTML='';}
+function fillCfg(){F.forEach(k=>{const el=$(k);if(el)el.value=cfg[k]||'';});$('css').value=cfg.css||'';
+  $('mods').innerHTML='';$('autoDrawBtn').textContent='自动画：'+(cfg.autoDraw?'开':'关');}
+$('autoDrawBtn').onclick=()=>{
+  cfg.autoDraw=!cfg.autoDraw;
+  localStorage.setItem(LS_CFG,JSON.stringify(cfg));
+  $('autoDrawBtn').textContent='自动画：'+(cfg.autoDraw?'开':'关');
+};
 $('openCfg').onclick=()=>{fillCfg();$('sheet').classList.add('open');};
 $('closeCfg').onclick=()=>$('sheet').classList.remove('open');
 $('saveCfg').onclick=()=>{
