@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<title>话 · 你我之间</title>
+<style>
+  :root{
+    --paper:#F7F6F2;
+    --ink:#160823;
+    --blue:#1110A2;
+    --bright:#475DDE;
+    --line:rgba(22,8,35,.13);
+    --muted:rgba(22,8,35,.5);
+    --serif:'Songti SC','Noto Serif SC',STSong,Georgia,serif;
+    --sans:-apple-system,'PingFang SC','Noto Sans SC',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:var(--sans);
+    display:flex; flex-direction:column;
+    height:100dvh; overflow:hidden;
+  }
+
+  header{
+    flex:none; padding:calc(18px + env(safe-area-inset-top)) 24px 14px;
+    display:flex; align-items:baseline; justify-content:space-between;
+    border-bottom:1px solid var(--line);
+  }
+  .title{font-family:var(--serif); font-size:17px; letter-spacing:.3em}
+  .title em{font-style:normal;color:var(--blue)}
+  .cfg{
+    font-size:10px; letter-spacing:.24em; color:var(--muted);
+    background:none; border:none; padding:6px 0 6px 10px; font-family:var(--sans);
+  }
+
+  #log{
+    flex:1; overflow-y:auto; padding:26px 24px 10px;
+    -webkit-overflow-scrolling:touch;
+  }
+  #log::-webkit-scrollbar{display:none}
+
+  .empty{
+    color:var(--muted); font-family:var(--serif); font-size:13px;
+    letter-spacing:.1em; line-height:2.1; margin-top:12px;
+  }
+  .empty b{display:block; font-weight:400; color:var(--blue); font-size:15px; letter-spacing:.2em; margin-bottom:6px}
+
+  .m{margin-bottom:30px; animation:in .35s ease both}
+  @keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .m .who{
+    font-family:var(--sans); font-size:9px; letter-spacing:.3em;
+    color:var(--muted); margin-bottom:9px;
+  }
+  .m .body{
+    font-family:var(--serif); font-size:16px; line-height:1.95;
+    letter-spacing:.03em; white-space:pre-wrap; word-break:break-word;
+  }
+
+  .m.me{text-align:right}
+  .m.me .who{color:var(--bright)}
+  .m.me .body{color:var(--ink); display:inline-block; text-align:left;
+              max-width:88%; border-right:2px solid var(--bright); padding-right:12px}
+
+  .m.her .body{color:var(--ink)}
+  .m.her .who::before{
+    content:""; width:5px; height:5px; border-radius:50%;
+    background:var(--bright); display:inline-block; margin-right:8px; vertical-align:middle;
+  }
+
+  .m.sys .body{font-family:var(--sans); font-size:12px; color:#b3543f; letter-spacing:.06em}
+
+  .caret{display:inline-block;width:2px;height:15px;background:var(--bright);
+         vertical-align:-2px;margin-left:2px;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+
+  footer{
+    flex:none; padding:10px 20px calc(14px + env(safe-area-inset-bottom));
+    border-top:1px solid var(--line); background:var(--paper);
+  }
+  .row{display:flex; align-items:flex-end; gap:12px}
+  textarea{
+    flex:1; background:none; border:none; outline:none; resize:none;
+    font-family:var(--serif); font-size:15px; line-height:1.7; color:var(--ink);
+    padding:9px 2px; max-height:120px;
+  }
+  textarea::placeholder{color:rgba(22,8,35,.28); letter-spacing:.1em}
+  .send{
+    flex:none; border:1px solid var(--blue); background:none; color:var(--blue);
+    font-family:var(--sans); font-size:12px; letter-spacing:.2em;
+    padding:9px 16px; margin-bottom:5px;
+  }
+  .send:disabled{opacity:.3}
+  .send.on{background:var(--blue); color:var(--paper)}
+
+  /* 设置 */
+  .sheet{
+    position:fixed; inset:0; background:rgba(247,246,242,.98);
+    transform:translateY(100%); transition:transform .35s cubic-bezier(.4,0,.2,1);
+    z-index:20; display:flex; flex-direction:column;
+    padding:calc(22px + env(safe-area-inset-top)) 26px calc(24px + env(safe-area-inset-bottom));
+    overflow-y:auto;
+  }
+  .sheet.open{transform:none}
+  .sheet h2{font-family:var(--serif); font-size:16px; letter-spacing:.26em; font-weight:400; margin-bottom:28px}
+  label{display:block; font-size:9.5px; letter-spacing:.24em; color:var(--muted); margin:18px 0 7px}
+  input,textarea.area{
+    width:100%; background:none; border:none; border-bottom:1px solid var(--line);
+    padding:9px 2px; font-family:var(--serif); font-size:14px; color:var(--ink); outline:none;
+  }
+  textarea.area{resize:none; min-height:64px; line-height:1.8}
+  .hint{font-size:10px;color:var(--muted);letter-spacing:.06em;margin-top:6px;line-height:1.7}
+  .acts{display:flex;gap:12px;margin-top:34px}
+  .acts button{flex:1;padding:14px 0;font-size:12px;letter-spacing:.2em;
+               border:1px solid var(--line);background:none;color:var(--ink);font-family:var(--sans)}
+  .acts .primary{border-color:var(--blue);background:var(--blue);color:var(--paper)}
+  .acts .danger{color:#b3543f;border-color:rgba(179,84,63,.3)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title">话</div>
+  <button class="cfg" id="openCfg">设置</button>
+</header>
+
+<div id="log"></div>
+
+<footer>
+  <div class="row">
+    <textarea id="input" rows="1" placeholder="说点什么……"></textarea>
+    <button class="send" id="send">写</button>
+  </div>
+</footer>
+
+<!-- 设置面板 -->
+<div class="sheet" id="sheet">
+  <h2>连一个说话的地方</h2>
+
+  <label>接口地址</label>
+  <input id="base" placeholder="https://api.deepseek.com/v1">
+  <div class="hint">OpenAI 兼容地址，一般以 /v1 结尾</div>
+
+  <label>密钥</label>
+  <input id="key" type="password" placeholder="sk-...">
+  <div class="hint">只存在这台手机的浏览器里</div>
+
+  <label>模型</label>
+  <input id="model" placeholder="deepseek-chat">
+
+  <label>它是谁（系统提示词）</label>
+  <textarea class="area" id="sys" placeholder="你叫小D，安静、温和，说话短。"></textarea>
+
+  <div class="acts">
+    <button id="closeCfg">关掉</button>
+    <button class="primary" id="saveCfg">存下</button>
+  </div>
+  <div class="acts">
+    <button class="danger" id="clearAll">清空记录</button>
+  </div>
+</div>
+
+<script>
+const LS_MSG='bys-chat-msg-v1', LS_CFG='bys-chat-cfg-v1';
+const logEl=document.getElementById('log');
+const inputEl=document.getElementById('input');
+const sendEl=document.getElementById('send');
+const sheet=document.getElementById('sheet');
+
+let msgs=JSON.parse(localStorage.getItem(LS_MSG)||'[]');
+let cfg=JSON.parse(localStorage.getItem(LS_CFG)||'{}');
+let busy=false;
+
+function save(){localStorage.setItem(LS_MSG,JSON.stringify(msgs));}
+
+function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+function render(){
+  logEl.innerHTML='';
+  if(!msgs.length){
+    logEl.innerHTML='<div class="empty"><b>这里很安静</b>先去「设置」填上接口和密钥，<br>然后随便说一句。</div>';
+    return;
+  }
+  msgs.forEach((m,i)=>{
+    const d=document.createElement('div');
+    d.className='m '+(m.role==='user'?'me':m.role==='assistant'?'her':'sys');
+    d.innerHTML=`<div class="who">${m.role==='user'?'我':m.role==='assistant'?'它':'提示'}</div>
+                 <div class="body" data-i="${i}">${esc(m.content)}</div>`;
+    logEl.appendChild(d);
+  });
+  scrollBottom();
+}
+
+function scrollBottom(){requestAnimationFrame(()=>{logEl.scrollTop=logEl.scrollHeight;});}
+
+function addMsg(role,content){
+  msgs.push({role,content});
+  save();
+  const d=document.createElement('div');
+  d.className='m '+(role==='user'?'me':role==='assistant'?'her':'sys');
+  d.innerHTML=`<div class="who">${role==='user'?'我':role==='assistant'?'它':'提示'}</div>
+               <div class="body">${esc(content)}<span class="caret"></span></div>`;
+  logEl.appendChild(d);
+  scrollBottom();
+  return d.querySelector('.body');
+}
+
+async function send(){
+  const text=inputEl.value.trim();
+  if(!text||busy) return;
+  if(!cfg.base||!cfg.key||!cfg.model){
+    addMsg('sys','还没连上说话的地方。点右上角「设置」。');
+    return;
+  }
+  inputEl.value=''; inputEl.style.height='auto'; syncBtn();
+
+  addMsg('user',text);
+  busy=true; syncBtn();
+
+  const body=addMsg('assistant','');
+  let acc='';
+
+  try{
+    const res=await fetch(cfg.base.replace(/\/+$/,'')+'/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.key},
+      body:JSON.stringify({
+        model:cfg.model,
+        stream:true,
+        messages:[
+          {role:'system',content:cfg.sys||'你叫小D，安静、温和，说话短。'},
+          ...msgs.filter(m=>m.role==='user'||m.role==='assistant').slice(0,-1)
+        ]
+      })
+    });
+    if(!res.ok){
+      const t=await res.text();
+      throw new Error('HTTP '+res.status+' '+t.slice(0,120));
+    }
+    const reader=res.body.getReader();
+    const dec=new TextDecoder();
+    let buf='';
+    while(true){
+      const {done,value}=await reader.read();
+      if(done) break;
+      buf+=dec.decode(value,{stream:true});
+      const lines=buf.split('\n');
+      buf=lines.pop();
+      for(const line of lines){
+        const s=line.trim();
+        if(!s.startsWith('data:')) continue;
+        const data=s.slice(5).trim();
+        if(data==='[DONE]') continue;
+        try{
+          const j=JSON.parse(data);
+          const piece=j.choices?.[0]?.delta?.content||'';
+          if(piece){
+            acc+=piece;
+            body.innerHTML=esc(acc)+'<span class="caret"></span>';
+            scrollBottom();
+          }
+        }catch(e){}
+      }
+    }
+    body.innerHTML=esc(acc);
+    msgs[msgs.length-1].content=acc;
+    save();
+  }catch(e){
+    body.innerHTML='<span style="color:#b3543f">没成：'+esc(e.message)+'</span>';
+    msgs.pop();
+    save();
+  }finally{
+    busy=false; syncBtn();
+  }
+}
+
+function syncBtn(){
+  sendEl.disabled=!inputEl.value.trim()||busy;
+  sendEl.classList.toggle('on',!!inputEl.value.trim()&&!busy);
+  sendEl.textContent=busy?'…':'写';
+}
+
+inputEl.addEventListener('input',()=>{
+  inputEl.style.height='auto';
+  inputEl.style.height=Math.min(inputEl.scrollHeight,120)+'px';
+  syncBtn();
+});
+inputEl.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}
+});
+sendEl.addEventListener('click',send);
+
+/* 设置 */
+document.getElementById('openCfg').onclick=()=>{
+  document.getElementById('base').value=cfg.base||'';
+  document.getElementById('key').value=cfg.key||'';
+  document.getElementById('model').value=cfg.model||'';
+  document.getElementById('sys').value=cfg.sys||'';
+  sheet.classList.add('open');
+};
+document.getElementById('closeCfg').onclick=()=>sheet.classList.remove('open');
+document.getElementById('saveCfg').onclick=()=>{
+  cfg={
+    base:document.getElementById('base').value.trim(),
+    key:document.getElementById('key').value.trim(),
+    model:document.getElementById('model').value.trim(),
+    sys:document.getElementById('sys').value.trim()
+  };
+  localStorage.setItem(LS_CFG,JSON.stringify(cfg));
+  sheet.classList.remove('open');
+  render();
+};
+document.getElementById('clearAll').onclick=()=>{
+  if(!confirm('对话都删掉？')) return;
+  msgs=[]; save(); render(); sheet.classList.remove('open');
+};
+
+render(); syncBtn();
+</script>
+</body>
+</html>
