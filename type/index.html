@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>字体 · 三种选</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.7.0/style.css">
+<style>
+  :root{
+    --paper:#F7F6F2; --ink:#160823; --blue:#1110A2; --bright:#475DDE;
+    --line:rgba(22,8,35,.14); --muted:rgba(22,8,35,.52);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--paper);color:var(--ink);padding:40px 24px 60px;line-height:1.9;-webkit-font-smoothing:antialiased}
+  .eyebrow{font-size:10px;letter-spacing:.34em;color:var(--blue);margin-bottom:28px}
+  .lead{font-size:12px;color:var(--muted);letter-spacing:.1em;margin-bottom:34px}
+
+  .opt{border-top:1px solid var(--line);padding:26px 0 30px}
+  .tag{font-size:9.5px;letter-spacing:.3em;color:var(--bright);margin-bottom:14px}
+  .name{font-size:11px;color:var(--muted);letter-spacing:.1em;margin-bottom:18px}
+
+  .t{font-size:30px;letter-spacing:.1em;line-height:1.5;color:var(--ink)}
+  .t em{font-style:normal;color:var(--blue)}
+  .b{font-size:14px;color:var(--muted);margin-top:14px;letter-spacing:.04em}
+
+  .f1 .t,.f1 .b{font-family:'LXGW WenKai Screen','LXGW WenKai',serif}
+  .f2 .t,.f2 .b{font-family:'Songti SC','Noto Serif SC',Georgia,serif}
+  .f3 .t,.f3 .b{font-family:-apple-system,'PingFang SC','Noto Sans SC',sans-serif}
+
+  .note{margin-top:12px;font-size:10.5px;color:var(--muted);letter-spacing:.06em;
+        font-family:-apple-system,'PingFang SC',sans-serif}
+  .foot{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);
+        font-size:10px;letter-spacing:.2em;color:var(--muted);
+        font-family:-apple-system,'PingFang SC',sans-serif}
+</style>
+</head>
+<body>
+
+<div class="eyebrow">Type · 三种</div>
+<div class="lead">同一句话，换三种字体。你挑一个，或者告诉我哪里不对。</div>
+
+<div class="opt f1">
+  <div class="tag">A</div>
+  <div class="name">霞鹜文楷</div>
+  <div class="t">你我<em>之间</em></div>
+  <div class="b">今天没有发生什么大事。窗外有风，晾着的衣服晃了一下，我看了很久。</div>
+  <div class="note">手写楷体的味道，笔画带一点软，读起来像信纸。要联网加载，第一次稍慢。</div>
+</div>
+
+<div class="opt f2">
+  <div class="tag">B</div>
+  <div class="name">宋体</div>
+  <div class="t">你我<em>之间</em></div>
+  <div class="b">今天没有发生什么大事。窗外有风，晾着的衣服晃了一下，我看了很久。</div>
+  <div class="note">正经的宋，横细竖粗，清瘦。手机自带，不用等。</div>
+</div>
+
+<div class="opt f3">
+  <div class="tag">C</div>
+  <div class="name">黑体</div>
+  <div class="t">你我<em>之间</em></div>
+  <div class="b">今天没有发生什么大事。窗外有风，晾着的衣服晃了一下，我看了很久。</div>
+  <div class="note">干净、现代、不文艺。但最稳，字最清楚。</div>
+</div>
+
+<div class="foot">A / B / C，说个字母就行</div>
+
+</body>
+</html>
