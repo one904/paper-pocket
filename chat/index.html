@@ -30,7 +30,14 @@
   .empty{color:var(--muted);font-family:var(--serif);font-size:13px;letter-spacing:.1em;line-height:2.1;margin-top:12px}
   .empty b{display:block;font-weight:400;color:var(--blue);font-size:15px;letter-spacing:.2em;margin-bottom:6px}
 
-  .m{margin-bottom:26px;animation:in .35s ease both;cursor:pointer}
+  .m{margin-bottom:26px;animation:in .35s ease both;cursor:pointer;position:relative}
+  .m .del{
+    position:absolute; right:-2px; top:-2px; width:26px; height:26px;
+    border:none; background:none; color:rgba(179,84,63,.55);
+    font-size:17px; line-height:1; font-family:var(--sans); padding:0;
+  }
+  .m.sys{padding-right:26px}
+  .m.sys .del{color:rgba(179,84,63,.75)}
   @keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
   .m .who{font-size:9px;letter-spacing:.3em;color:var(--muted);margin-bottom:8px}
   .m .body{font-family:var(--serif);font-size:16px;line-height:1.95;letter-spacing:.03em;
@@ -216,8 +223,13 @@ function makeNode(m,i){
   let html=`<div class="who">${m.role==='user'?'我':m.role==='assistant'?'它':'提示'}</div>`;
   if(m.reasoning) html+=`<details class="think"><summary>想了一会儿</summary><div class="ttext">${esc(m.reasoning)}</div></details>`;
   html+=`<div class="body"></div>`;
+  if(m.role==='system') html+=`<button class="del" aria-label="删掉">×</button>`;
   d.innerHTML=html;
   d.onclick=e=>{e.stopPropagation();openActions(i);};
+  if(m.role==='system'){
+    const x=d.querySelector('.del');
+    x.onclick=e=>{e.stopPropagation();msgs.splice(i,1);save();render();};
+  }
   return d;
 }
 async function fillBody(m,node){
@@ -399,13 +411,28 @@ function speakLast(){
 }
 
 /* ---------- 说 ---------- */
+function note(txt){
+  const last=msgs[msgs.length-1];
+  if(last&&last.role==='system'&&last.content===txt) return;   // 同样的提示不叠
+  pushMsg('sys',txt);
+}
 function voice(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){pushMsg('sys','这台浏览器不给语音识别。');return;}
-  const r=new SR();r.lang='zh-CN';r.interimResults=false;
-  r.onresult=e=>{inputEl.value=(inputEl.value+' '+e.results[0][0].transcript).trim();syncBtn();};
-  r.onerror=()=>pushMsg('sys','没听清。');
-  r.start();
+  if(!SR){note('这个浏览器不给语音识别，先用键盘打字吧。');return;}
+  let r;
+  try{ r=new SR(); }catch(e){ note('语音识别开不起来。'); return; }
+  r.lang='zh-CN'; r.interimResults=false; r.maxAlternatives=1;
+  r.onresult=e=>{
+    const t=e.results?.[0]?.[0]?.transcript||'';
+    if(t){inputEl.value=(inputEl.value+' '+t).trim();syncBtn();}
+  };
+  r.onerror=e=>{
+    const why={ 'not-allowed':'没给麦克风权限','no-speech':'没听见声音',
+                'network':'网络断了','audio-capture':'抓不到麦克风',
+                'service-not-allowed':'系统不让用' }[e.error]||e.error||'不知道为啥';
+    note('语音没成：'+why+'。');
+  };
+  try{ r.start(); }catch(e){ note('语音识别已经在跑了。'); }
 }
 
 /* ---------- 小像 ---------- */
