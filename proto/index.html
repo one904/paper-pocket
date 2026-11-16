@@ -3,123 +3,102 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>你我之间 · 样张</title>
+<title>爱的流淌 · 奔流不息</title>
 <style>
   :root{
     --paper:#F7F6F2;
     --ink:#160823;
     --blue:#1110A2;
     --bright:#475DDE;
-    --line:rgba(22,8,35,.14);
-    --muted:rgba(22,8,35,.52);
+    --line:rgba(22,8,35,.13);
+    --muted:rgba(22,8,35,.5);
+    --serif:'Songti SC','Noto Serif SC',STSong,Georgia,serif;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   body{
     background:var(--paper); color:var(--ink);
-    font-family:-apple-system,"PingFang SC","Noto Sans SC",sans-serif;
-    padding:48px 26px calc(50px + env(safe-area-inset-bottom));
-    line-height:1.75; -webkit-font-smoothing:antialiased;
+    font-family:var(--serif);
+    padding:54px 28px calc(50px + env(safe-area-inset-bottom));
+    line-height:1.85; -webkit-font-smoothing:antialiased;
+    min-height:100vh;
   }
 
-  .eyebrow{
-    font-size:10px; letter-spacing:.34em; text-transform:uppercase;
-    color:var(--blue); margin-bottom:26px;
+  .top{
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-family:-apple-system,'PingFang SC',sans-serif;
+    font-size:9px; letter-spacing:.34em; color:var(--muted);
+    margin-bottom:64px;
   }
+  .top .mark{color:var(--blue)}
 
   h1{
-    font-family:"Songti SC","Noto Serif SC",Georgia,serif;
-    font-weight:400; font-size:46px; letter-spacing:.14em; line-height:1.4;
-    color:var(--ink);
+    font-size:46px; font-weight:400; letter-spacing:.22em;
+    line-height:1.45; margin-bottom:6px;
   }
-  h1 em{font-style:normal; color:var(--blue)}
-  .sub{
-    margin-top:20px; font-size:12px; color:var(--muted); letter-spacing:.42em;
+  .under{
+    font-size:13px; letter-spacing:.62em; color:var(--blue);
+    padding-left:2px; margin-bottom:56px;
   }
 
-  .rule{height:1px;background:var(--line);margin:38px 0}
+  .rule{height:1px;background:var(--line);margin:0 0 34px}
 
-  .label{font-size:10px;letter-spacing:.3em;color:var(--muted);text-transform:uppercase;margin-bottom:14px}
-
-  .swatches{display:flex;gap:10px;margin-bottom:8px}
-  .sw{flex:1;height:72px;border-radius:2px}
-  .sw:nth-child(1){background:#160823}
-  .sw:nth-child(2){background:#1110A2}
-  .sw:nth-child(3){background:#475DDE}
-  .sw:nth-child(4){background:#F7F6F2;border:1px solid var(--line)}
-  .codes{display:flex;gap:10px;margin-top:8px}
-  .codes span{flex:1;font-size:9px;letter-spacing:.06em;color:var(--muted);font-family:ui-monospace,monospace}
-
-  .card{
-    border:1px solid var(--line);
-    padding:24px 22px; margin-top:6px; background:rgba(255,255,255,.45);
-    position:relative;
+  .menu{list-style:none}
+  .menu li{border-bottom:1px solid var(--line)}
+  .menu a{
+    display:flex; align-items:baseline; gap:16px;
+    padding:21px 2px; text-decoration:none; color:var(--ink);
+    transition:.3s;
   }
-  .card::before{
-    content:""; position:absolute; left:-1px; top:22px; width:2px; height:26px; background:var(--blue);
+  .menu .no{
+    font-family:-apple-system,'PingFang SC',sans-serif;
+    font-size:9px; letter-spacing:.2em; color:var(--bright); width:22px; flex:none;
   }
-  .card h2{
-    font-family:"Songti SC","Noto Serif SC",Georgia,serif;
-    font-size:19px; font-weight:400; letter-spacing:.06em; margin-bottom:9px;
+  .menu .zh{font-size:19px; letter-spacing:.18em; flex:1}
+  .menu .en{
+    font-family:-apple-system,'PingFang SC',sans-serif;
+    font-size:9px; letter-spacing:.24em; color:var(--muted); text-transform:uppercase;
   }
-  .card p{font-size:13px; color:var(--muted); line-height:1.95}
-  .card .date{margin-top:16px;font-size:10px;letter-spacing:.24em;color:var(--blue)}
-
-  .btns{display:flex;gap:12px;margin-top:34px}
-  .btn{
-    flex:1; text-align:center; padding:15px 0; font-size:13px; letter-spacing:.18em;
-    border:1px solid var(--blue); color:var(--blue); background:none;
-    text-decoration:none; display:block; transition:.25s;
-  }
-  .btn.solid{background:var(--blue); color:var(--paper); border-color:var(--blue)}
+  .menu a:active{opacity:.45}
 
   .quote{
-    margin-top:44px; padding-left:16px; border-left:1px solid var(--bright);
-    font-family:"Songti SC","Noto Serif SC",Georgia,serif;
-    font-size:14px; color:var(--muted); letter-spacing:.05em; line-height:2;
+    margin-top:52px; font-size:13px; color:var(--muted);
+    letter-spacing:.12em; line-height:2.1; padding-left:14px;
+    border-left:1px solid var(--bright);
   }
 
   .foot{
-    margin-top:56px; padding-top:18px; border-top:1px solid var(--line);
-    display:flex; justify-content:space-between; align-items:baseline;
-    font-size:10px; letter-spacing:.22em; color:var(--muted);
+    margin-top:60px; display:flex; justify-content:space-between;
+    font-family:-apple-system,'PingFang SC',sans-serif;
+    font-size:9px; letter-spacing:.24em; color:var(--muted);
   }
-  .dot{width:7px;height:7px;border-radius:50%;background:var(--bright);display:inline-block;margin-right:7px;vertical-align:middle}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--bright);
+       display:inline-block;margin-right:8px;vertical-align:middle}
 </style>
 </head>
 <body>
 
-  <div class="eyebrow">Between us · No.01</div>
+  <div class="top">
+    <span>BETWEEN US · 01</span>
+    <span class="mark">EST. 2026</span>
+  </div>
 
-  <h1>爱的<em>流淌</em></h1>
-  <div class="sub">奔 流 不 息</div>
+  <h1>爱的流淌</h1>
+  <div class="under">奔流不息</div>
 
   <div class="rule"></div>
 
-  <div class="label">Palette</div>
-  <div class="swatches">
-    <div class="sw"></div><div class="sw"></div><div class="sw"></div><div class="sw"></div>
-  </div>
-  <div class="codes"><span>#160823</span><span>#1110A2</span><span>#475DDE</span><span>#F7F6F2</span></div>
+  <ul class="menu">
+    <li><a href="#"><span class="no">01</span><span class="zh">信</span><span class="en">letters</span></a></li>
+    <li><a href="#"><span class="no">02</span><span class="zh">声</span><span class="en">sound</span></a></li>
+    <li><a href="#"><span class="no">03</span><span class="zh">影</span><span class="en">images</span></a></li>
+    <li><a href="#"><span class="no">04</span><span class="zh">话</span><span class="en">talk</span></a></li>
+  </ul>
 
-  <div class="rule"></div>
-
-  <div class="label">Sample</div>
-  <div class="card">
-    <h2>未寄信 · 第七封</h2>
-    <p>今天没有发生什么大事。窗外有风，晾着的衣服晃了一下，我看了很久。</p>
-    <div class="date">NOV 16, 2026</div>
-  </div>
-
-  <div class="btns">
-    <a class="btn" href="#">继续读</a>
-    <a class="btn solid" href="#">写一封</a>
-  </div>
-
-  <div class="quote">“门廊的灯亮着，就是有人在等。”</div>
+  <div class="quote">水一直在走，所以我们不用急着说些什么。</div>
 
   <div class="foot">
     <span><span class="dot"></span>纸 · 蓝 · 安静</span>
-    <span>2026</span>
+    <span>NO.01</span>
   </div>
 
 </body>
