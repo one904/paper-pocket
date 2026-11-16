@@ -212,6 +212,19 @@ const urlCache={};
 async function imgURL(k){if(urlCache[k])return urlCache[k];
   const b=await getImg(k);if(!b)return '';const u=URL.createObjectURL(b);urlCache[k]=u;return u;}
 
+/* ---------- 地址兼容 ---------- */
+function base(r){return (r||'').trim().replace(/\/+$/,'');}
+function cands(r){const b=base(r);return !b?[]:(b.endsWith('/v1')?[b]:[b,b+'/v1']);}
+function human(e){
+  const m=(e&&e.message)||String(e||'');
+  if(/Failed to fetch|NetworkError|load failed/i.test(m)) return '连不上：检查网络，或者地址对不对';
+  if(/401|403/.test(m)) return '钥匙不对，或者这个钥匙没有这个模型的权限';
+  if(/404/.test(m)) return '地址找不着，可能少了 /v1 或者多了点什么';
+  if(/429/.test(m)) return '太快了，被限流，等一下再试';
+  if(/5\d\d/.test(m)) return '对面服务器出问题了，不是你的错';
+  return m.replace(/^HTTP /,'');
+}
+
 /* ---------- 渲染 ---------- */
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function save(){localStorage.setItem(LS_MSG,JSON.stringify(msgs));}
@@ -310,13 +323,20 @@ async function send(){
                     .slice(0,-1).map(m=>({role:m.role,content:m.content}));
 
   try{
-    const res=await fetch(cfg.base.replace(/\/+$/,'')+'/chat/completions',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.key},
-      body:JSON.stringify({model:cfg.model,stream:true,
-        messages:[{role:'system',content:cfg.sys||'你叫小D，安静、温和，说话短。'},...history]})
-    });
-    if(!res.ok){const t=await res.text();throw new Error('HTTP '+res.status+' '+t.slice(0,140));}
+    let res=null,lastErr=null;
+    for(const b of cands(cfg.base)){
+      try{
+        const r=await fetch(b+'/chat/completions',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.key},
+          body:JSON.stringify({model:cfg.model,stream:true,
+            messages:[{role:'system',content:cfg.sys||'你叫小D，安静、温和，说话短。'},...history]})
+        });
+        if(!r.ok){const t=await r.text();throw new Error('HTTP '+r.status+' '+t.slice(0,140));}
+        res=r;break;
+      }catch(e){lastErr=e;}
+    }
+    if(!res) throw lastErr||new Error('连不上');
     const reader=res.body.getReader(),dec=new TextDecoder();let buf='';
     while(true){
       const {done,value}=await reader.read();if(done)break;
@@ -351,7 +371,7 @@ async function send(){
     save();
     if(thinkEl){thinkEl.open=false;thinkEl.querySelector('summary').textContent='想过这些';}
   }catch(e){
-    bodyEl.innerHTML='<span style="color:#b3543f">没成：'+esc(e.message)+'</span>';
+    bodyEl.innerHTML='<span style="color:#b3543f">没成：'+esc(human(e))+'</span>';
     msgs.pop();save();
   }finally{busy=false;syncBtn();}
 }
@@ -359,19 +379,26 @@ async function send(){
 /* ---------- 画 ---------- */
 async function draw(){
   const p=prompt('画什么？');if(!p)return;
-  const base=(cfg.imgBase||cfg.base||'').replace(/\/+$/,'');
+  const rawBase=cfg.imgBase||cfg.base||'';
   const key=cfg.imgKey||cfg.key;
-  if(!base||!key){pushMsg('sys','生图还没接上门。');return;}
+  if(!rawBase||!key){pushMsg('sys','生图还没接上门。');return;}
   const model=cfg.imgModel||cfg.model;
   pushMsg('user','画一张：'+p);
   const {body:be}=pushMsg('assistant','');be.textContent='在画……';
   try{
-    const res=await fetch(base+'/images/generations',{
-      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body:JSON.stringify({model,prompt:p,size:'1024x1024',n:1,response_format:'b64_json'})
-    });
-    if(!res.ok){const t=await res.text();throw new Error('HTTP '+res.status+' '+t.slice(0,160));}
-    const j=await res.json();const item=j.data?.[0]||{};
+    let ok=null,lastErr=null;
+    for(const b of cands(rawBase)){
+      try{
+        const r=await fetch(b+'/images/generations',{
+          method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+          body:JSON.stringify({model,prompt:p,size:'1024x1024',n:1,response_format:'b64_json'})
+        });
+        if(!r.ok){const t=await r.text();throw new Error('HTTP '+r.status+' '+t.slice(0,160));}
+        ok=r;break;
+      }catch(e){lastErr=e;}
+    }
+    if(!ok) throw lastErr||new Error('连不上');
+    const j=await ok.json();const item=j.data?.[0]||{};
     let blob=null;
     if(item.b64_json){const bin=atob(item.b64_json),arr=new Uint8Array(bin.length);
       for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
@@ -380,7 +407,7 @@ async function draw(){
     if(!blob)throw new Error('没拿到图');
     const k='g:'+Date.now();await putImg(k,blob);
     msgs.pop();pushMsg('assistant','',{type:'image',img:k});
-  }catch(e){be.innerHTML='<span style="color:#b3543f">画没成：'+esc(e.message)+'</span>';msgs.pop();save();}
+  }catch(e){be.innerHTML='<span style="color:#b3543f">画没成：'+esc(human(e))+'</span>';msgs.pop();save();}
 }
 
 /* ---------- 听 ---------- */
@@ -469,19 +496,29 @@ $('saveCfg').onclick=()=>{
   applyCSS(cfg.css||'');$('sheet').classList.remove('open');render();
 };
 $('listModels').onclick=async()=>{
-  const base=($('base').value.trim()||cfg.base||'').replace(/\/+$/,'');
+  const raw=$('base').value.trim()||cfg.base||'';
   const key=$('key').value.trim()||cfg.key||'';
   const box=$('mods');box.innerHTML='<span style="font-size:11px;color:#7a6f86">在问…</span>';
   try{
-    const r=await fetch(base+'/models',{headers:{'Authorization':'Bearer '+key}});
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    const j=await r.json();
-    const ids=(j.data||[]).map(x=>x.id).filter(Boolean);
+    let models=null,lastErr=null;
+    for(const b of cands(raw)){
+      try{
+        const r=await fetch(b+'/models',{headers:{'Authorization':'Bearer '+key}});
+        if(!r.ok){const t=await r.text();throw new Error('HTTP '+r.status+' '+t.slice(0,120));}
+        const j=await r.json();
+        const list=j.data||j.models||[];
+        if(!list.length){lastErr=new Error('返回结果为空');continue;}
+        models=list;break;
+      }catch(e){lastErr=e;}
+    }
+    if(!models) throw lastErr||new Error('拉不到');
+    const ids=models.map(x=>typeof x==='string'?x:x.id).filter(Boolean);
     box.innerHTML='';
-    if(!ids.length){box.innerHTML='<span style="font-size:11px">它没给列表</span>';return;}
-    ids.slice(0,50).forEach(id=>{const b=document.createElement('button');b.textContent=id;
+    ids.slice(0,60).forEach(id=>{const b=document.createElement('button');b.textContent=id;
       b.onclick=()=>{$('model').value=id;};box.appendChild(b);});
-  }catch(e){box.innerHTML='<span style="font-size:11px;color:#b3543f">拉不到：'+esc(e.message)+'</span>';}
+  }catch(e){
+    box.innerHTML='<span style="font-size:11px;color:#b3543f">拉不到：'+esc(human(e))+'</span>';
+  }
 };
 $('clearAll').onclick=()=>{if(!confirm('对话都删掉？'))return;msgs=[];save();render();$('sheet').classList.remove('open');};
 
